@@ -45,11 +45,11 @@ hand_gesture_project/
 |   |   `-- videos/
 |   |       |-- participant_01/
 |   |       |   `-- session_01/
-|   |       |       |-- p01_s01_thumbs_up.mp4
-|   |       |       |-- p01_s01_thumbs_down.mp4
-|   |       |       |-- p01_s01_stop_palm.mp4
-|   |       |       |-- p01_s01_ok.mp4
-|   |       |       `-- p01_s01_neutral.mp4
+|   |       |       |-- p01_s01_thumbs_up_front.mp4
+|   |       |       |-- p01_s01_thumbs_down_left.mp4
+|   |       |       |-- p01_s01_stop_palm_right.mp4
+|   |       |       |-- p01_s01_ok_front.mp4
+|   |       |       `-- p01_s01_neutral_no_hand.mp4
 |   |       |-- participant_02/
 |   |       |-- participant_03/
 |   |       `-- participant_04/
@@ -112,8 +112,8 @@ File quản lý nhãn và thông tin của từng frame. Dùng đường dẫn t
 Schema đề xuất:
 
 ```csv
-image_path,source_video,gesture,participant_id,session_id,lighting,background,hand_side,split
-data/processed/frames/p01_s01_thumbs_up_000001.jpg,data/raw/videos/participant_01/session_01/p01_s01_thumbs_up.mp4,thumbs_up,participant_01,session_01,normal,plain,right,train
+image_path,source_video,gesture,participant_id,session_id,view_angle,lighting,background,hand_side,split
+data/processed/frames/p01_s01_thumbs_up_front_000001.jpg,data/raw/videos/participant_01/session_01/p01_s01_thumbs_up_front.mp4,thumbs_up,participant_01,session_01,front,normal,plain,right,train
 ```
 
 Trong đó:
@@ -123,6 +123,7 @@ Trong đó:
 - `gesture`: một trong 5 label đã quy định.
 - `participant_id`: mã người quay, không dùng tên thật.
 - `session_id`: phiên quay dữ liệu.
+- `view_angle`: góc nhìn của bàn tay, gồm `front`, `left` hoặc `right`.
 - `lighting`: ví dụ `normal`, `low_light`, `backlight`.
 - `background`: ví dụ `plain`, `cluttered`.
 - `hand_side`: `left`, `right` hoặc `unknown`.
@@ -136,38 +137,58 @@ Mỗi video chỉ nên chứa một cử chỉ. Thời lượng khuyến nghị 
 
 Trong video, người tham gia nên giữ cử chỉ ổn định ở phần giữa. Khi tách frame, ưu tiên lấy các frame ở đoạn ổn định và bỏ qua frame bắt đầu/kết thúc nếu bàn tay đang chuyển sang hoặc rời khỏi cử chỉ.
 
-Quy tắc đặt tên:
+Quy tắc đặt tên cho các lớp cử chỉ điều khiển:
 
 ```text
-p<participant>_s<session>_<gesture>.mp4
+p<participant>_s<session>_<gesture>_<view_angle>.mp4
 ```
 
 Ví dụ:
 
 ```text
-p01_s01_thumbs_up.mp4
-p04_s02_stop_palm.mp4
+p01_s01_thumbs_up_front.mp4
+p01_s01_thumbs_up_left.mp4
+p01_s01_thumbs_up_right.mp4
+p04_s02_stop_palm_left.mp4
+p04_s02_ok_front.mp4
 ```
 
-Nếu cần ghi rõ điều kiện, có thể dùng:
+Ba góc quay được sử dụng là:
+
+- `front`: bàn tay hướng tương đối trực diện camera.
+- `left`: xoay khoảng 30-45 độ sang trái.
+- `right`: xoay khoảng 30-45 độ sang phải.
+
+Đối với lớp `neutral`, dùng loại trạng thái thay cho góc quay:
 
 ```text
-p04_s02_thumbs_down_lowlight_cluttered.mp4
+p01_s01_neutral_no_hand.mp4
+p01_s01_neutral_hand_outside.mp4
+p01_s01_neutral_relaxed.mp4
 ```
+
+Nếu cần ghi rõ điều kiện ánh sáng hoặc background, thông tin đó nên được lưu trong `labels.csv` thay vì kéo dài tên file.
 
 ### Frame
 
 Quy tắc đặt tên:
 
 ```text
-p<participant>_s<session>_<gesture>_<frame_number>.jpg
+p<participant>_s<session>_<gesture>_<view_angle>_<frame_number>.jpg
 ```
 
 Ví dụ:
 
 ```text
-p01_s01_thumbs_up_000001.jpg
-p01_s01_thumbs_up_000002.jpg
+p01_s01_thumbs_up_front_000001.jpg
+p01_s01_thumbs_up_front_000002.jpg
+```
+
+Với lớp `neutral`, thay `<view_angle>` bằng trạng thái neutral:
+
+```text
+p01_s01_neutral_no_hand_000001.jpg
+p01_s01_neutral_relaxed_000001.jpg
 ```
 
 Không lấy tất cả frame liên tiếp nếu chúng gần như giống nhau. Nên lấy frame đại diện và loại frame trùng hoặc quá nhòe.
