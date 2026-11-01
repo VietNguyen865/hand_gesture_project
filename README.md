@@ -29,11 +29,11 @@ Nhóm sử dụng 5 lớp:
 |---|---|---|
 | `thumbs_up` | Giơ ngón cái lên | Sang slide tiếp theo |
 | `thumbs_down` | Giơ ngón cái xuống | Về slide trước |
-| `stop_palm` | Đưa bàn tay lên như ký hiệu dừng | Tạm dừng/che màn hình bằng phím `B` |
-| `ok` | Tạo ký hiệu OK bằng ngón cái và ngón trỏ | Tiếp tục bằng phím `B` lần nữa |
-| `neutral` | Không có tay hoặc tay ở trạng thái nghỉ | Không thực hiện lệnh |
+| `stop_palm` | Đưa bàn tay lên như ký hiệu dừng | Tạm dừng trình chiếu |
+| `ok` | Tạo ký hiệu OK bằng ngón cái và ngón trỏ | Tiếp tục trình chiếu |
+| `other` | Mọi trạng thái không thuộc 4 cử chỉ điều khiển trên | Không thực hiện lệnh |
 
-`neutral` là lớp bắt buộc để hệ thống không gửi lệnh khi không có cử chỉ hợp lệ.
+Nhóm dùng lớp `other` để biểu diễn các trường hợp không thực hiện lệnh: không có tay, tay ngoài khung hình, tay nghỉ, cử chỉ không hợp lệ, tay bị che hoặc quá nhỏ để nhận dạng. Đây là một lớp duy nhất, không chia thành các lớp riêng cho từng trạng thái.
 
 ## 3. Cấu trúc thư mục
 
@@ -49,7 +49,7 @@ hand_gesture_project/
 |   |       |       |-- p01_s01_thumbs_down_left.mp4
 |   |       |       |-- p01_s01_stop_palm_right.mp4
 |   |       |       |-- p01_s01_ok_front.mp4
-|   |       |       `-- p01_s01_neutral_no_hand.mp4
+|   |       |       `-- p01_s01_other_no_hand.mp4
 |   |       |-- participant_02/
 |   |       |-- participant_03/
 |   |       `-- participant_04/
@@ -112,8 +112,9 @@ File quản lý nhãn và thông tin của từng frame. Dùng đường dẫn t
 Schema đề xuất:
 
 ```csv
-image_path,source_video,gesture,participant_id,session_id,view_angle,lighting,background,hand_side,split
-data/processed/frames/p01_s01_thumbs_up_front_000001.jpg,data/raw/videos/participant_01/session_01/p01_s01_thumbs_up_front.mp4,thumbs_up,participant_01,session_01,front,normal,plain,right,train
+image_path,source_video,gesture,participant_id,session_id,view_angle,split
+data/processed/frames/p01_s01_thumbs_up_front/participant_01_session_01_thumbs_up_front_000000.jpg,data/raw/videos/participant_01/session_01/p01_s01_thumbs_up_front.mp4,thumbs_up,participant_01,session_01,front,train
+data/processed/frames/p01_s01_other_no_hand/participant_01_session_01_other_000000.jpg,data/raw/videos/participant_01/session_01/p01_s01_other_no_hand.mp4,other,participant_01,session_01,,train
 ```
 
 Trong đó:
@@ -123,10 +124,7 @@ Trong đó:
 - `gesture`: một trong 5 label đã quy định.
 - `participant_id`: mã người quay, không dùng tên thật.
 - `session_id`: phiên quay dữ liệu.
-- `view_angle`: góc nhìn của bàn tay, gồm `front`, `left` hoặc `right`.
-- `lighting`: ví dụ `normal`, `low_light`, `backlight`.
-- `background`: ví dụ `plain`, `cluttered`.
-- `hand_side`: `left`, `right` hoặc `unknown`.
+- `view_angle`: góc nhìn của bàn tay, gồm `front`, `left` hoặc `right`; được phép để trống cho lớp `other`. Trong Python dùng `None`, trong CSV để ô trống, không ghi chữ `empty`.
 - `split`: `train`, `validation` hoặc `test`.
 
 ## 4. Quy tắc thu thập và đặt tên dữ liệu
@@ -159,37 +157,57 @@ Ba góc quay được sử dụng là:
 - `left`: xoay khoảng 30-45 độ sang trái.
 - `right`: xoay khoảng 30-45 độ sang phải.
 
-Đối với lớp `neutral`, dùng loại trạng thái thay cho góc quay:
+Đối với lớp `other`, có thể thêm mô tả trạng thái vào tên video:
 
 ```text
-p01_s01_neutral_no_hand.mp4
-p01_s01_neutral_hand_outside.mp4
-p01_s01_neutral_relaxed.mp4
+p01_s01_other_no_hand.mp4
+p01_s01_other_hand_outside.mp4
+p01_s01_other_relaxed.mp4
 ```
 
-Nếu cần ghi rõ điều kiện ánh sáng hoặc background, thông tin đó nên được lưu trong `labels.csv` thay vì kéo dài tên file.
+Các hậu tố `no_hand`, `hand_outside`, `relaxed` chỉ mô tả video, không phải lớp hoặc góc nhìn mới. Cả ba video đều có `gesture=other` và để trống `view_angle` trong `labels.csv`.
+
+Khi quay nhiều lần với cùng người, phiên quay, cử chỉ và góc nhìn (hoặc cùng mô tả trạng thái của lớp `other`), thêm hậu tố `_take01`, `_take02`, ... trước phần mở rộng để phân biệt các lần quay:
+
+```text
+p01_s01_thumbs_up_front_take01.mp4
+p01_s01_thumbs_up_front_take02.mp4
+p01_s01_other_no_hand_take01.mp4
+p01_s01_other_no_hand_take02.mp4
+```
+
+Có thể dùng `_take01` ngay từ lần quay đầu tiên. Tên video không tính phần mở rộng phải duy nhất trong bộ dữ liệu, vì mỗi video được tách frame vào thư mục mang tên đó. Hậu tố `take` chỉ là số lần quay, không tạo thêm lớp, góc nhìn hoặc cột trong `labels.csv`.
 
 ### Frame
 
-Quy tắc đặt tên:
+Hàm `extract_frames()` lưu mỗi video vào một thư mục riêng trong `data/processed/frames/`, đặt theo tên video không có phần mở rộng. Tên frame dùng trực tiếp `participant_id` và `session_id` được truyền vào hàm:
 
 ```text
-p<participant>_s<session>_<gesture>_<view_angle>_<frame_number>.jpg
+<participant_id>_<session_id>_<gesture>_<view_angle>_<frame_number>.jpg
 ```
 
-Ví dụ:
+Ví dụ với `participant_id="participant_01"`, `session_id="session_01"`:
 
 ```text
-p01_s01_thumbs_up_front_000001.jpg
-p01_s01_thumbs_up_front_000002.jpg
+p01_s01_thumbs_up_front/participant_01_session_01_thumbs_up_front_000000.jpg
+p01_s01_thumbs_up_front/participant_01_session_01_thumbs_up_front_000005.jpg
 ```
 
-Với lớp `neutral`, thay `<view_angle>` bằng trạng thái neutral:
+Với lớp `other` và `view_angle=None`, tên frame bỏ phần góc nhìn. Trạng thái mô tả vẫn nằm trong tên thư mục video:
 
 ```text
-p01_s01_neutral_no_hand_000001.jpg
-p01_s01_neutral_relaxed_000001.jpg
+p01_s01_other_no_hand/participant_01_session_01_other_000000.jpg
+p01_s01_other_relaxed/participant_01_session_01_other_000000.jpg
 ```
+
+Nếu tên video có hậu tố `_take01` hoặc `_take02`, thư mục frame cũng giữ hậu tố đó. Tên từng frame vẫn theo quy tắc trên, ví dụ:
+
+```text
+p01_s01_thumbs_up_front_take01/participant_01_session_01_thumbs_up_front_000000.jpg
+p01_s01_thumbs_up_front_take02/participant_01_session_01_thumbs_up_front_000000.jpg
+```
+
+Số frame bắt đầu từ 0; mặc định lấy một frame sau mỗi 5 frame theo cấu hình.
 
 Không lấy tất cả frame liên tiếp nếu chúng gần như giống nhau. Nên lấy frame đại diện và loại frame trùng hoặc quá nhòe.
 
