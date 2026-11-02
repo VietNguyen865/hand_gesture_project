@@ -126,7 +126,7 @@ Trong đó:
 - `source_video`: video gốc tạo ra frame.
 - `gesture`: một trong 5 label đã quy định.
 - `participant_id`: mã người quay, không dùng tên thật.
-- `session_id`: phiên quay dữ liệu.
+- `session_id`: phiên quay dữ liệu, thường tương ứng với một địa điểm hoặc một điều kiện quay khác nhau. Ví dụ: `session_01`, `session_02`, `session_03`.
 - `view_angle`: góc nhìn của bàn tay, gồm `front`, `left` hoặc `right`; được phép để trống cho lớp `other`. Trong Python dùng `None`, trong CSV để ô trống, không ghi chữ `empty`.
 - `split`: `train`, `validation` hoặc `test`.
 
@@ -160,6 +160,18 @@ Ba góc quay được sử dụng là:
 - `left`: xoay khoảng 30-45 độ sang trái.
 - `right`: xoay khoảng 30-45 độ sang phải.
 
+Nếu quay cùng một người ở ba địa điểm khác nhau, dùng ba session khác nhau:
+
+```text
+p01_s01_thumbs_up_front.mp4
+p01_s02_thumbs_up_front.mp4
+p01_s03_thumbs_up_front.mp4
+```
+
+Trong đó `s01`, `s02`, `s03` lần lượt là địa điểm hoặc phiên quay thứ nhất,
+thứ hai và thứ ba. Nếu mỗi địa điểm quay đủ ba góc, giữ nguyên `front`,
+`left` và `right` trong tên file.
+
 Đối với lớp `other`, có thể thêm mô tả trạng thái vào tên video:
 
 ```text
@@ -170,16 +182,16 @@ p01_s01_other_relaxed.mp4
 
 Các hậu tố `no_hand`, `hand_outside`, `relaxed` chỉ mô tả video, không phải lớp hoặc góc nhìn mới. Cả ba video đều có `gesture=other` và để trống `view_angle` trong `labels.csv`.
 
-Khi quay nhiều lần với cùng người, phiên quay, cử chỉ và góc nhìn (hoặc cùng mô tả trạng thái của lớp `other`), thêm hậu tố `_take01`, `_take02`, ... trước phần mở rộng để phân biệt các lần quay:
+Nếu mỗi địa điểm chỉ quay một lần cho cùng một cử chỉ và góc nhìn thì không cần thêm hậu tố `take`. Chỉ dùng `_take02`, `_take03`, ... khi phải quay lại cùng một session, cùng cử chỉ và cùng góc nhìn, chẳng hạn do video trước bị lỗi:
 
 ```text
-p01_s01_thumbs_up_front_take01.mp4
+p01_s01_thumbs_up_front.mp4
 p01_s01_thumbs_up_front_take02.mp4
-p01_s01_other_no_hand_take01.mp4
+p01_s01_other_no_hand.mp4
 p01_s01_other_no_hand_take02.mp4
 ```
 
-Có thể dùng `_take01` ngay từ lần quay đầu tiên. Tên video không tính phần mở rộng phải duy nhất trong bộ dữ liệu, vì mỗi video được tách frame vào thư mục mang tên đó. Hậu tố `take` chỉ là số lần quay, không tạo thêm lớp, góc nhìn hoặc cột trong `labels.csv`.
+Tên video không tính phần mở rộng phải duy nhất trong bộ dữ liệu, vì mỗi video được tách frame vào thư mục mang tên đó. Hậu tố `take` chỉ là số lần quay lại, không tạo thêm lớp, session, góc nhìn hoặc cột mới trong `labels.csv`.
 
 ### Frame
 
@@ -203,10 +215,10 @@ p01_s01_other_no_hand/participant_01_session_01_other_000000.jpg
 p01_s01_other_relaxed/participant_01_session_01_other_000000.jpg
 ```
 
-Nếu tên video có hậu tố `_take01` hoặc `_take02`, thư mục frame cũng giữ hậu tố đó. Tên từng frame vẫn theo quy tắc trên, ví dụ:
+Nếu tên video có hậu tố `take02` hoặc `take03`, thư mục frame cũng giữ hậu tố đó. Tên từng frame vẫn theo quy tắc trên, ví dụ:
 
 ```text
-p01_s01_thumbs_up_front_take01/participant_01_session_01_thumbs_up_front_000000.jpg
+p01_s01_thumbs_up_front/participant_01_session_01_thumbs_up_front_000000.jpg
 p01_s01_thumbs_up_front_take02/participant_01_session_01_thumbs_up_front_000000.jpg
 ```
 
