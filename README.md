@@ -59,9 +59,9 @@ hand_gesture_project/
 |   `-- pipeline.py
 |
 |-- experiments/
-|   |-- 01_data_preprocessing.ipynb
-|   |-- 02_segmentation_features.ipynb
-|   `-- 03_classical_recognition_evaluation.ipynb
+|   |-- 01_person1_hsv_v_gamma.ipynb
+|   |-- 02_person2_lab_kmeans.ipynb
+|   `-- 03_person3_hog_canny.ipynb
 |
 |-- README.md
 |-- requirements.txt
@@ -213,7 +213,7 @@ Không nên viết lại toàn bộ thuật toán trong `pipeline.py`; file này
 
 Nhóm giữ ba notebook, mỗi notebook có một người phụ trách. Các thuật toán tái sử dụng đặt trong `src/`; notebook chứa cấu hình thí nghiệm, hình minh họa, bảng kết quả và phân tích của người phụ trách.
 
-### `01_data_preprocessing.ipynb` — Người 1
+### `01_person1_hsv_v_gamma.ipynb` — Người 1
 
 - Kiểm tra nhãn và hiển thị các ảnh `hand_rgb` crop mẫu.
 - Minh họa BGR/RGB, kênh HSV và kênh V.
@@ -221,14 +221,14 @@ Nhóm giữ ba notebook, mỗi notebook có một người phụ trách. Các th
 - Thực hiện HSV-V → mask → morphology → contour → Hu/đặc trưng hình học → SVM.
 - Phần Canny chung: khảo sát các ngưỡng thấp/cao.
 
-### `02_segmentation_features.ipynb` — Người 2
+### `02_person2_lab_kmeans.ipynb` — Người 2
 
 - Chuyển Lab và thử K-means với K=2, 3, 4, 5; dùng quy tắc chọn cụm cố định, không chọn bằng mắt riêng cho từng ảnh.
 - Thực hiện Lab → mask → morphology → contour → Hu/đặc trưng hình học → SVM.
 - So sánh Median/Gaussian filtering và ghi ảnh hưởng lên mask.
 - Phần Canny chung: khảo sát closing và lọc connected components.
 
-### `03_classical_recognition_evaluation.ipynb` — Người 3
+### `03_person3_hog_canny.ipynb` — Người 3
 
 - Tạo baseline HOG trên crop grayscale → SVM.
 - Tích hợp contour Canny → Hu/đặc trưng hình học → SVM thành hướng thứ tư.
