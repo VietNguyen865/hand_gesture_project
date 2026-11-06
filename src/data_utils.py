@@ -1,5 +1,3 @@
-"""Simple helpers for videos, frames, labels, and participant-based splits."""
-
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Union
 
@@ -20,17 +18,12 @@ LABEL_COLUMNS = (
 )
 
 
-def ensure_directories(directories: Iterable[PathLike]) -> None:
-    """Create the requested directories, including their parents."""
+def ensure_directories(directories):
     for directory in directories:
         Path(directory).mkdir(parents=True, exist_ok=True)
 
 
-def scan_videos(
-    video_dir: PathLike,
-    extensions: Sequence[str] = config.VIDEO_EXTENSIONS,
-) -> List[Path]:
-    """Find videos recursively, including uppercase extensions such as .MP4."""
+def scan_videos(video_dir, extensions=config.VIDEO_EXTENSIONS,):
     video_dir = Path(video_dir)
     if not video_dir.is_dir():
         raise FileNotFoundError(f"Video directory not found: {video_dir}")
@@ -41,8 +34,7 @@ def scan_videos(
     )
 
 
-def get_video_info(video_path: PathLike) -> Dict[str, float]:
-    """Read FPS, frame count, dimensions, and duration (0 if FPS is unknown)."""
+def get_video_info(video_path):
     capture = cv2.VideoCapture(str(video_path))
     try:
         if not capture.isOpened():
@@ -72,13 +64,7 @@ def extract_frames(
     end_frame: Optional[int] = None,
     max_frames: Optional[int] = config.MAX_FRAMES_PER_VIDEO,
 ) -> List[Path]:
-    """Extract frames into output_dir/<video_stem>/ without overwriting.
 
-    Frame numbers are zero-based. start_frame is included; end_frame is
-    excluded. Use distinct video names for different recordings. An existing
-    nonempty output folder raises an error rather than mixing recordings.
-    view_angle may be None for the other class (no command).
-    """
     if gesture not in config.GESTURE_CLASSES:
         raise ValueError(f"Unknown gesture: {gesture}")
     if view_angle not in (*config.VIEW_ANGLES, None):
@@ -128,7 +114,6 @@ def extract_frames(
 
 
 def _read_image(image_path: PathLike) -> Optional[np.ndarray]:
-    """Read an image with a Unicode path; return None for unreadable files."""
     try:
         data = np.frombuffer(Path(image_path).read_bytes(), dtype=np.uint8)
         return cv2.imdecode(data, cv2.IMREAD_COLOR) if data.size else None
@@ -136,16 +121,7 @@ def _read_image(image_path: PathLike) -> Optional[np.ndarray]:
         return None
 
 
-def compute_frame_similarity(
-    frame_a: np.ndarray,
-    frame_b: np.ndarray,
-    method: str = "cosine",
-) -> float:
-    """Return cosine similarity in [0, 1] after grayscale conversion/resize.
-
-    This is a simple duplicate filter. Tune its threshold on example frames;
-    a large static background can hide small changes in the hand.
-    """
+def compute_frame_similarity(frame_a, frame_b, method="cosine",):
     if method != "cosine":
         raise ValueError("Only method='cosine' is supported.")
     vectors = []
@@ -161,15 +137,7 @@ def compute_frame_similarity(
     return float(np.clip(np.dot(a, b) / denominator, 0.0, 1.0))
 
 
-def remove_duplicate_frames(
-    frame_paths: Sequence[PathLike],
-    similarity_threshold: float = 0.98,
-    method: str = "cosine",
-) -> List[Path]:
-    """Keep distinct readable frames in input order; never delete files.
-
-    Call separately for each video. Compare with the last retained frame.
-    """
+def remove_duplicate_frames(frame_paths, similarity_threshold=0.98, method="cosine",):
     if not 0 <= similarity_threshold <= 1:
         raise ValueError("similarity_threshold must be between 0 and 1.")
     if method != "cosine":
@@ -186,13 +154,7 @@ def remove_duplicate_frames(
     return kept_paths
 
 
-def check_frame_quality(
-    frame: Optional[np.ndarray],
-    min_width: int = 100,
-    min_height: int = 100,
-    blur_threshold: Optional[float] = None,
-) -> bool:
-    """Check image dimensions and optionally Laplacian variance for blur."""
+def check_frame_quality(frame, min_width = 100, min_height = 100, blur_threshold = None,):
     if frame is None or frame.size == 0 or frame.ndim not in (2, 3):
         return False
     height, width = frame.shape[:2]
@@ -206,18 +168,7 @@ def check_frame_quality(
     return True
 
 
-def clean_frame_paths(
-    frame_paths: Sequence[PathLike],
-    remove_blurry: bool = False,
-    remove_duplicates: bool = True,
-    blur_threshold: Optional[float] = None,
-    similarity_threshold: float = 0.98,
-) -> List[Path]:
-    """Filter one video's frames without deleting their files.
-
-    Supply blur_threshold when enabling remove_blurry. Always reject
-    unreadable images and images smaller than 100 x 100 pixels.
-    """
+def clean_frame_paths(frame_paths, remove_blurry=False, remove_duplicates=True, blur_threshold=None, similarity_threshold=0.98,):
     if remove_blurry and blur_threshold is None:
         raise ValueError("Provide blur_threshold when remove_blurry=True.")
     threshold = blur_threshold if remove_blurry else None
@@ -240,11 +191,6 @@ def create_label_record(
     view_angle: Optional[str] = None,
     split: Optional[str] = None,
 ) -> Dict[str, Optional[str]]:
-    """Build a record with paths relative to PROJECT_ROOT, using '/' separators.
-
-    Relative input paths are also interpreted from PROJECT_ROOT.
-    For the other class, view_angle may be None (an empty CSV cell).
-    """
     root = config.PROJECT_ROOT.resolve()
     record = {
         "image_path": (root / image_path).resolve().relative_to(root).as_posix(),
@@ -260,7 +206,6 @@ def create_label_record(
 
 
 def _validate_labels(labels: pd.DataFrame) -> None:
-    """Check required fields and the class/angle/split values."""
     missing = set(LABEL_COLUMNS) - set(labels.columns)
     if missing:
         raise ValueError(f"Missing label columns: {sorted(missing)}")
@@ -280,11 +225,7 @@ def _validate_labels(labels: pd.DataFrame) -> None:
         raise ValueError("Duplicate image_path values in labels.")
 
 
-def save_labels(
-    records: Sequence[Dict[str, Optional[str]]],
-    output_csv: PathLike,
-) -> None:
-    """Validate records and save CSV; None becomes an empty CSV cell."""
+def save_labels(records, output_csv,):
     labels = pd.DataFrame(records) if len(records) else pd.DataFrame(columns=LABEL_COLUMNS)
     _validate_labels(labels)
     output_csv = Path(output_csv)
@@ -292,20 +233,17 @@ def save_labels(
     labels.loc[:, list(LABEL_COLUMNS)].to_csv(output_csv, index=False, encoding="utf-8-sig")
 
 
-def load_labels(labels_csv: PathLike) -> pd.DataFrame:
-    """Read CSV as strings, preserving participant IDs and empty cells as None."""
+def load_labels(labels_csv):
     labels = pd.read_csv(labels_csv, dtype=str, keep_default_na=False).replace({"": None})
     _validate_labels(labels)
     return labels
 
 
 def update_split_column(
-    labels: pd.DataFrame,
-    train_participants: Sequence[str],
-    validation_participants: Sequence[str],
-    test_participants: Sequence[str],
-) -> pd.DataFrame:
-    """Return a copy with participant-based splits; reject overlaps/omissions."""
+    labels,
+    train_participants,
+    validation_participants,
+    test_participants,):
     _validate_labels(labels)
     train = set(train_participants)
     validation = set(validation_participants)
@@ -328,6 +266,5 @@ def split_by_participant(
     train_participants: Sequence[str],
     validation_participants: Sequence[str],
     test_participants: Sequence[str],
-) -> pd.DataFrame:
-    """Convenience wrapper; validation is handled by update_split_column."""
+):
     return update_split_column(labels, train_participants, validation_participants, test_participants)
