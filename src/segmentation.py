@@ -373,6 +373,64 @@ def filter_small_edge_components(edge_map, min_area=30):
     return remove_small_components(edge_map, min_area=min_area, keep_largest=False)
 
 
+def gamma_correct_grayscale(gray, gamma=1.0):
+    """Hiệu chỉnh gamma cho ảnh xám uint8."""
+    if gray is None or gray.ndim != 2 or gray.dtype != np.uint8:
+        raise ValueError("gray phải là ảnh xám uint8 2 chiều.")
+    if gamma <= 0:
+        raise ValueError("gamma phải lớn hơn 0.")
+    normalized = gray.astype(np.float32) / 255.0
+    corrected = np.power(normalized, gamma) * 255.0
+    return np.clip(corrected, 0, 255).astype(np.uint8)
+
+
+def gamma_otsu_segmentation(gray, gamma=1.0, foreground="bright", kernel_size=3, min_area=50):
+    """Tạo mask từ gamma, Otsu, morphology và contour."""
+    corrected = gamma_correct_grayscale(gray, gamma=gamma)
+    # Chọn phần sáng hoặc tối làm foreground.
+    if foreground == "bright":
+        threshold_mode = cv2.THRESH_BINARY
+    elif foreground == "dark":
+        threshold_mode = cv2.THRESH_BINARY_INV
+    else:
+        raise ValueError("foreground phải là 'bright' hoặc 'dark'.")
+
+    # Otsu tự chọn ngưỡng từ histogram của ảnh đã gamma.
+    threshold, raw_mask = cv2.threshold(
+        corrected, 0, 255, threshold_mode + cv2.THRESH_OTSU
+    )
+    kernel = create_structuring_element(cv2.MORPH_ELLIPSE, kernel_size)
+    # Opening bỏ đốm nhỏ; closing lấp khe nhỏ trong mask.
+    opened_mask = cv2.morphologyEx(raw_mask, cv2.MORPH_OPEN, kernel, iterations=1)
+    clean_mask = cv2.morphologyEx(opened_mask, cv2.MORPH_CLOSE, kernel, iterations=1)
+    clean_mask = remove_small_components(clean_mask, min_area=min_area)
+    contours = extract_external_contours(clean_mask, min_area=min_area)
+
+    # Tô contour lớn nhất thành mask hình dạng.
+    mask = np.zeros_like(gray)
+    if contours:
+        cv2.drawContours(mask, [contours[0]], -1, 255, cv2.FILLED)
+
+    # Tạo ảnh overlay để quan sát vùng được chọn.
+    base = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+    overlay = base.copy()
+    overlay[mask > 0] = (0, 200, 0)
+    overlay = cv2.addWeighted(base, 0.7, overlay, 0.3, 0)
+    if contours:
+        cv2.drawContours(overlay, [contours[0]], -1, (0, 255, 255), 1)
+
+    return {
+        "corrected": corrected,
+        "threshold": threshold,
+        "raw_mask": raw_mask,
+        "opened_mask": opened_mask,
+        "clean_mask": clean_mask,
+        "mask": mask,
+        "contours": contours,
+        "overlay": overlay,
+    }
+
+
 def edge_based_segmentation(image, low_threshold=80, high_threshold=160, min_area=config.MIN_CONTOUR_AREA, 
                             blur_kernel_size=3, closing_kernel_size=3, min_edge_area=30):
     """Run the complete edge-to-mask segmentation pipeline.

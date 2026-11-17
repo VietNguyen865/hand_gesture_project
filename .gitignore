@@ -1,0 +1,10 @@
+/Untitled2.ipynb
+/data/raw/videos/
+__pycache__/
+*.py[cod]
+/experiments/03_person3_hog_canny_full_dataset.ipynb
+/results/
+/data/cache/person3_v1/
+/src/person3_cache.py
+/src/person3_sampling.py
+/src/person3_shape.py
