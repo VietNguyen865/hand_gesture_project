@@ -3,8 +3,13 @@
 __pycache__/
 *.py[cod]
 /experiments/03_person3_hog_canny_full_dataset.ipynb
+/experiments/03_person3_hog_full_rgb_test.ipynb
+/experiments/03_person3_hog_leapgestrecog.ipynb
+/experiments/03_person3_split_truong_nhom.ipynb
+/data/raw/leapgestrecog/
 /results/
 /data/cache/person3_v1/
+/data/cache/person1_hagrid_v1/
 /src/person3_cache.py
 /src/person3_sampling.py
 /src/person3_shape.py
