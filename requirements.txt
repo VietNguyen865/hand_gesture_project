@@ -1,0 +1,9 @@
+numpy
+opencv-python
+pandas
+scikit-learn
+scikit-image
+matplotlib
+pyarrow
+huggingface_hub
+requests
